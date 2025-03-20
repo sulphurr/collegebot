@@ -67,9 +67,7 @@ This project is licensed under the MIT License.
 
 ## Contact
 For any inquiries or support, contact:
-- **Email**: support@collegechatbot.com
-- **GitHub Issues**: [Submit a new issue](https://github.com/your-username/college-assistant-chatbot/issues)
+- **Email**: sulphr21@gmail.com
 
 ---
-Developed with ❤️ for students and educators!
 
