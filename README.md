@@ -1,7 +1,7 @@
 # College Assistant Chatbot
 
 ## Overview
-The **College Assistant Chatbot** is an AI-driven system designed to provide students with instant access to room locations, faculty schedules, and staffroom details. Utilizing **Natural Language Processing (NLP)** and **Machine Learning (ML)**, it ensures accurate and efficient query responses. The chatbot is accessible via a **web platform**, enabling smooth and seamless user interaction.
+The **AI Powered Campus Navigation System** is an AI-driven system designed to provide students with instant access to room locations, faculty schedules, and staffroom details. Utilizing **Natural Language Processing (NLP)** and **Machine Learning (ML)**, it ensures accurate and efficient query responses. The chatbot is accessible via a **web platform**, enabling smooth and seamless user interaction.
 
 ## Features
 - **Instant Room Location Assistance**: Quickly find the location of any classroom, lab, or office.
@@ -10,13 +10,13 @@ The **College Assistant Chatbot** is an AI-driven system designed to provide stu
 - **AI-Powered Responses**: Uses NLP and ML to understand and respond accurately to user queries.
 - **Web-Based Interface**: Easy access through a web browser.
 
-## Technologies Used
-- **Frontend**: HTML, CSS, JavaScript (React/Angular/Vue)
-- **Backend**: Python (Flask/Django) or Node.js
-- **Database**: PostgreSQL / MongoDB
-- **Machine Learning**: TensorFlow / scikit-learn
-- **NLP**: spaCy / NLTK / OpenAI API
-- **Hosting**: AWS / Firebase / Heroku
+## Technologies Used  
+- **Frontend**: HTML, CSS, JavaScript (for testing purposes only)  
+- **Backend**: **Python** (FastAPI, Uvicorn)  
+- **Database**: **MySQL**  
+- **Machine Learning**: **Google Gemini Embeddings** (via LangChain)  
+- **NLP**: **Google Gemini API** (via `langchain_google_genai`)  
+- **Hosting**: **Not hosted** (run locally for development and testing)
 
 ## Installation
 1. Clone the repository:
@@ -40,9 +40,11 @@ The **College Assistant Chatbot** is an AI-driven system designed to provide stu
 ## Usage
 - Open the chatbot on the web platform.
 - Enter queries such as:
-  - "Where is Room 302?"
-  - "What is Dr. Smith’s schedule today?"
-  - "Is Prof. Johnson in the staffroom?"
+  - "Where is Room S12A?"
+  - "Which class is Ms M teaching right now?"
+  - "Where is Mr J staffroom?"
+  - "Which class is Ms K teaching period 4 Wednesday?"
+  - "Hi! How are you?"
 - The chatbot will provide accurate and instant responses.
 
 ## Contributing
