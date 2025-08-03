@@ -1,74 +1,75 @@
-# faculty.py
-from datetime import datetime
-from typing import Dict, Optional
 import re
+import logging
+from datetime import datetime, timedelta
+from db import get_db_connection, get_faculty_info, get_faculty_schedule, determine_current_period
 
-def extract_faculty_details(query: str) -> Optional[Dict]:
-    """Extract faculty name and other details from the query."""
+logging.basicConfig(level=logging.ERROR)
+logger = logging.getLogger(__name__)
+
+def clean_query(query: str) -> str:
+    return re.sub(r'\b(Ms\.|Mr\.|Dr\.|Prof\.)\s*', '', query, flags=re.IGNORECASE).strip()
+
+def extract_faculty_details(query: str, faculty_list: list) -> dict:
     try:
-        # Remove common words and clean the query
-        query = query.lower()
-        query = re.sub(r'\b(where|is|in|at|what|which|find)\b', '', query)
-        query = query.strip()
-        
-        # Look for faculty name (assuming it's the first proper noun)
-        words = query.split()
-        faculty_name = None
-        
-        for i, word in enumerate(words):
-            if word.istitle():
-                faculty_name = word
-                break
-        
+        query = clean_query(query.lower())
+        faculty_name = next((name for name in faculty_list if name.lower() in query), None)
         if not faculty_name:
-            return None
-            
-        # Extract day and period if present
-        day_match = re.search(r'\b(monday|tuesday|wednesday|thursday|friday)\b', query)
-        day = day_match.group(1).capitalize() if day_match else None
+            return {}
         
-        period_match = re.search(r'\b(period|p)\s*(\d)\b', query)
-        period = period_match.group(2) if period_match else None
+        is_staffroom_query = "staffroom" in query
         
-        return {
-            "name": faculty_name,
-            "day": day,
-            "period": period if period else "current"
-        }
+        if "tomorrow" in query:
+            day = (datetime.today() + timedelta(days=1)).strftime("%A")
+        else:
+            day_match = re.search(r'\b(monday|tuesday|wednesday|thursday|friday)\b', query)
+            day = day_match.group(0).capitalize() if day_match else datetime.today().strftime("%A")
+        
+        period_match = re.search(r'period\s*(\d+)|p\s*(\d+)', query)
+        period = period_match.group(1) or period_match.group(2) if period_match else "current"
+        
+        return {"name": faculty_name, "day": day, "period": period, "is_staffroom_query": is_staffroom_query}
     except Exception as e:
         logger.error(f"Error extracting faculty details: {e}")
-        return None
+        return {}
 
-def handle_faculty_query(query: str, db: mysql.connector.connection) -> str:
-    """Handle queries about faculty location and schedule."""
-    details = extract_faculty_details(query)
-    if not details:
-        return "I couldn't understand which faculty member you're asking about."
-    
-    faculty_name = details.get("name")
-    faculty_info = get_faculty_info(faculty_name, db)
-    if not faculty_info:
-        return f"I couldn't find information on {faculty_name}."
-    
-    if details.get("period") == "current":
-        current_location = get_current_faculty_location(faculty_info["id"], db)
-        if current_location:
-            return (f"{faculty_name} is currently teaching {current_location['subject']} "
-                   f"for {current_location['class']} in {current_location['room_code']}.")
-        return (f"{faculty_name} is currently not teaching. You may find them in "
-               f"staffroom {faculty_info['staffroom']}.")
-    
-    # Handle specific period queries
-    cursor = db.cursor(dictionary=True)
-    cursor.execute("""
-        SELECT subject, class, room_code, period_type
-        FROM timetable
-        WHERE faculty_id = %s AND day = %s AND period = %s
-    """, (faculty_info["id"], details.get("day"), details.get("period")))
-    
-    row = cursor.fetchone()
-    if row:
-        return (f"{faculty_name} teaches {row['subject']} for {row['class']} "
-                f"in {row['room_code']} during period {details.get('period')}.")
-    return (f"{faculty_name} does not have a scheduled class during "
-            f"period {details.get('period')} on {details.get('day')}.")
+def handle_faculty_query(query: str, db):
+    db = get_db_connection()
+    if not db:
+        logger.error("Database connection failed.")
+        return "Database connection failed."
+    try:
+        with db.cursor() as cursor:
+            cursor.execute("SELECT name FROM faculty")
+            faculty_list = [row[0] for row in cursor.fetchall() if row[0]]
+        details = extract_faculty_details(query, faculty_list)
+        if not details:
+            return "I couldn't understand which faculty member you're asking about."      
+        faculty_name = details["name"]
+        faculty_info = get_faculty_info(faculty_name, db)
+        if not faculty_info:
+            return f"Faculty details for {faculty_name} are not available."
+        
+        if details["is_staffroom_query"]:
+            staffroom = faculty_info.get("staffroom", "Staffroom information not available")
+            return f"{faculty_name}'s staffroom is {staffroom}."
+        
+        period = details["period"]
+        period_type = "regular"
+        
+        if period == "current":
+            period, period_type = determine_current_period()
+            if not period:
+                return f"{faculty_name} is not teaching right now."
+        
+        schedule = get_faculty_schedule(faculty_info["id"], details["day"], period, period_type, db)
+        
+        return (
+            f"{faculty_name} teaches {schedule['subject']} for {schedule['class']} in {schedule['room_code']} "
+            f"during period {period}." if schedule else 
+            f"{faculty_name} has no scheduled classes during period {period} on {details['day']}."
+        )
+    except Exception as e:
+        logger.error(f"Error handling faculty query: {e}")
+        return "An error occurred while processing your request."
+    finally:
+        db.close()

@@ -1,20 +1,18 @@
-# db.py
 import mysql.connector
 import os
 import logging
+import datetime
 from dotenv import load_dotenv
 from typing import Dict, Optional
 
-# Load environment variables
 if not os.getenv("DB_HOST"):
     load_dotenv()
 
-# Configure logging
 logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 def get_db_connection():
-    """Establish a connection to the MySQL database."""
+    #establish db connection
     try:
         conn = mysql.connector.connect(
             host=os.getenv("DB_HOST", "127.0.0.1"),
@@ -24,17 +22,12 @@ def get_db_connection():
             database=os.getenv("DB_NAME", "faculty_schedule"),
             connect_timeout=10
         )
-        if conn.is_connected():
-            return conn
-        else:
-            logger.error("Database connection failed.")
-            return None
+        return conn if conn.is_connected() else None
     except mysql.connector.Error as err:
         logger.error(f"Database error: {err}")
         return None
 
-def get_faculty_info(faculty_name: str, db: mysql.connector.connection) -> Optional[Dict]:
-    """Retrieve faculty information from the database."""
+def get_faculty_info(faculty_name: str, db) -> Optional[Dict]:
     cursor = db.cursor(dictionary=True)
     try:
         cursor.execute("SELECT id, staffroom FROM faculty WHERE name = %s", (faculty_name,))
@@ -43,33 +36,43 @@ def get_faculty_info(faculty_name: str, db: mysql.connector.connection) -> Optio
         logger.error(f"Database error: {e}")
         return None
 
-def get_current_faculty_location(faculty_id: int, db: mysql.connector.connection) -> Optional[Dict]:
-    """Get current faculty location (class or staffroom)."""
+def get_faculty_schedule(faculty_id: int, day: str, period: int, period_type: Optional[str], db) -> Optional[Dict]:
     cursor = db.cursor(dictionary=True)
-    current_time = datetime.datetime.now().time()
-    
-    # Period mapping
-    periods = [
-        (9, 10, 1), (10, 11, 2), (11, 12, 3),
-        (12, 13, 4), (13, 14, 4), (14, 15, 5), (15, 16, 6)
-    ]
-    
-    # Find current period
-    current_period = next(
-        (p for (start, end, p) in periods 
-         if start <= current_time.hour < end), None
-    )
-    
-    if not current_period:
+    try:
+        query = """
+            SELECT subject, class, room_code, period_type
+            FROM timetable
+            WHERE faculty_id = %s AND day = %s AND period = %s
+            ORDER BY FIELD(period_type, 'regular', 'firstyear')  -- Prioritize 'regular' if both exist
+            LIMIT 1
+        """
+        cursor.execute(query, [faculty_id, day, period])
+        result = cursor.fetchone()
+
+        if not result:
+            logger.error(f"No schedule found for faculty_id={faculty_id}, day={day}, period={period}")
+
+        return result
+    except mysql.connector.Error as e:
+        logger.error(f"Database error: {e}")
         return None
-    
-    # Get current class information
-    cursor.execute("""
-        SELECT t.subject, t.class, t.room_code, t.period_type
-        FROM timetable t
-        WHERE t.faculty_id = %s AND t.day = %s AND t.period = %s
-    """, (faculty_id, datetime.datetime.today().strftime('%A'), current_period))
-    
-    return cursor.fetchone()
+def determine_current_period():
+    now = datetime.datetime.now()
+    hour, minute = now.hour, now.minute
+    # Define period mappings
+    if 9 <= hour < 10:
+        return 1, "regular"
+    elif 10 <= hour < 11:
+        return 2, "regular"
+    elif 11 <= hour < 12 or (hour == 12 and minute <= 10):
+        return 3, "regular"
+    elif (hour == 12 and minute >= 10) or (hour == 13 and minute <= 10):
+        return 4, "firstyear"  # First-year special case
+    elif 13 <= hour < 14:
+        return 4, "regular"
+    elif 14 <= hour < 15:
+        return 5, "regular"
+    elif 15 <= hour < 16:
+        return 6, "regular"
 
-
+    return None, None  # No active period

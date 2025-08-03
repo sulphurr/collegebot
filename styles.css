@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&display=swap');
+
+/* General Styles */
+body {
+    background: url('assets/bg3.jpg') no-repeat center center fixed;
+    background-size: cover;
+    font-family: 'Arial', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    margin: 0;
+}
+
+
+/* Chatbot Container */
+.chatbot-container {
+    width: 400px; /* Set a fixed width */
+    height: 600px; /* Set a fixed height */
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
+
+
+/* Chat Header */
+.chatbot-header {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700; /* Bold */
+    color: #fff;
+    text-align: center;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+
+/* Chat Window */
+.chat-window {
+    flex-grow: 1;
+    padding: 15px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Message Bubbles */
+.bot-message, .user-message {
+    max-width: 75%;
+    padding: 14px 18px;
+    border-radius: 20px;
+    margin-bottom: 12px;
+    font-size: 16px;
+    animation: fadeIn 0.3s ease-in-out;
+    line-height: 1.6;
+}
+
+.bot-message {
+    align-self: flex-start;
+    background: #ffffff;
+    color: #333;
+    border-radius: 20px 20px 20px 0;
+    box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.1);
+}
+
+.user-message {
+    align-self: flex-end;
+    background: #5350df;
+    color: #fff;
+    border-radius: 20px 20px 0 20px;
+    box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Input Area */
+.input-container {
+    display: flex;
+    padding: 14px;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 15px;
+}
+
+.input-field {
+    flex: 1;
+    padding: 14px;
+    border: none;
+    border-radius: 14px;
+    outline: none;
+    font-size: 16px;
+    background: rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.send-button {
+    padding: 14px 20px;
+    background: #5350df;
+    color: white;
+    border: none;
+    border-radius: 14px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 18px;
+}
+
+.send-button:hover {
+    background: #3427c3;
+}
+
+/* Fade-in Animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}

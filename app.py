@@ -1,15 +1,27 @@
-#app.py
 from fastapi import FastAPI, Depends
 from fastapi.responses import PlainTextResponse
-from search import search_room
+from search import search_room, load_vector_store
 from db import get_db_connection
 from nlp import categorize_query
 from faculty import handle_faculty_query
-from gemini_utils import rephrase_with_gemini
 from langchain_google_genai import ChatGoogleGenerativeAI
-
+import logging
+import os
+from langchain_community.vectorstores import Chroma
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://127.0.0.1:5500"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+vector_store = load_vector_store()
 
 def get_db():
     db = get_db_connection()
@@ -18,64 +30,43 @@ def get_db():
     finally:
         db.close()
 
+#app.py
 @app.get("/query", response_class=PlainTextResponse)
-async def handle_query(query: str, db=Depends(get_db), vector_store=None):
-    """Handle queries using Gemini categorization and modular components."""
+async def handle_query(query: str, db=Depends(get_db)):
+    #redirect based on category
     try:
-        # Clean the query
         cleaned_query = query.lower().strip()
-        
-        # Create Gemini query for categorization
-        category_query = GoogleGenerativeAIQuery(
-            model="gemini-pro",
-            api_key=os.getenv("GEMINI_API_KEY"),
-            request_timeout=30
-        )
-        
-        # Determine query category
-        categories = {
-            "room": VECTOR_STORES['rooms'].similarities(cleaned_query)
-        }
-        
-        max_category = max(categories.items(), key=lambda x: x[1])
-        
-        if max_category[1] < 0.3:  # Threshold for confidence
+        #Categorize query using Gemini
+        category = categorize_query(cleaned_query)
+        logger.info(f"Categorized query as: {category}")
+        if category == "small_talk":
             return handle_small_talk(cleaned_query)
-            
-        # Handle based on category
-        if max_category[0] == "room":
-            return search_room(query, vector_store)
-        else:
-            # Faculty query handling
+        elif category == "room":
+            return search_room(query, vector_store)  # Pass preloaded vector store
+        elif category == "faculty":
             return handle_faculty_query(query, db)
-            
+        return "I'm not sure how to categorize this query."
     except Exception as e:
         logger.error(f"Error processing query: {e}")
         return "An error occurred while processing your query. Please try again."
 
 def handle_small_talk(query: str) -> str:
-    """Handle casual conversations using Gemini directly."""
     try:
-        # Create Gemini query for small talk
-        category_query = GoogleGenerativeAIQuery(
-            model="gemini-pro",
-            api_key=os.getenv("GEMINI_API_KEY"),
-            request_timeout=30
+        gemini = ChatGoogleGenerativeAI(
+            model="gemini-1.5-flash",
+            google_api_key=os.getenv("GEMINI_API_KEY"),
+            temperature=0.7
         )
-        
-        # Prompt for small talk response
         prompt = (
             "You are a helpful and professional college assistant. "
             "Respond naturally and friendly to this casual conversation: "
+            "Always end with asking if they need help with faculty or room query"
+            "Refrain from asking too many questions, stick to your role"
             f"'{query}'"
         )
-        
-        # Get Gemini response
-        reply = category_query.generate_content(prompt)
-        if reply and hasattr(reply, "text"):
-            return reply.text.strip()
-        logger.warning("Gemini response was empty or invalid")
-        return "I'm here to help! What would you like to know about faculty schedules or rooms?"
+
+        reply = gemini.invoke(prompt)
+        return reply.content.strip() if reply and reply.content else "I'm here to help! What would you like to know?"
     except Exception as e:
         logger.error(f"Gemini error: {e}")
-        return "I'm here to help! What would you like to know about faculty schedules or rooms?"
+        return "I'm here to help! What would you like to know?"
