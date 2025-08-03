@@ -1,3 +1,4 @@
+
 import os
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 from langchain_chroma import Chroma
@@ -7,11 +8,13 @@ load_dotenv()
 
 os.environ["GOOGLE_API_KEY"] = "AIzaSyAstWNeBV1Hg5IFpvrY8zl_Qw8o1vSp_ks"  
 
+
 embeddings = GoogleGenerativeAIEmbeddings(
     model="models/embedding-001",
     api_key=os.getenv("GOOGLE_API_KEY"),
     request_timeout=30
 )
+
 VECTOR_DB_PATH = "chroma_db"  
 def process_and_store_data(documents): #process and store docs into vectorstore
     if not documents:
