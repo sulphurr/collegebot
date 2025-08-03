@@ -1,14 +1,12 @@
-<<<<<<< HEAD
-venv/
-__pycache__/
-*.pyc
-chroma_db/
-=======
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
-
+venv/
+__pycache__/
+*.pyc
+chroma_db/
 # C extensions
 *.so
 
@@ -178,4 +176,3 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
->>>>>>> bf42b29b3b7bfee0ad8ae6cd2fb5bd03564054c6
