@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 from data_loader import load_documents, split_documents  
 load_dotenv()
 
-os.environ["GOOGLE_API_KEY"] = "AIzaSyAstWNeBV1Hg5IFpvrY8zl_Qw8o1vSp_ks"  
+os.environ["GOOGLE_API_KEY"] = "_api keygoogle_gemini"  
 
 
 embeddings = GoogleGenerativeAIEmbeddings(
