@@ -70,6 +70,8 @@ This project is licensed under the MIT License.
 ## Contact
 For any inquiries or support, contact:
 - **Email**: sulphr21@gmail.com
+- **Email**: adi.upendran888@gmail.com
+- **Email**: fatimaali2424@gmail.com
 
 ---
 
